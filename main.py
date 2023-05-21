@@ -83,26 +83,26 @@ def send_emails(subject, HTML_content, sender, to, reply_to, headers, email_api_
 
 
 if __name__ == "__main__":
-    # # Configure the Brevo client
-    # instance = configure_Brevo_client(
-    #     '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')
-    #
-    # # Define the email parameters
-    # subject = "test mail"
-    # html_content = "<html><body><h1>This is test transactional email</h1><br><p>Task: </p><a href='https://app.clickup.com/t/866aa5v4h'>Clickup task</a></body></html>"
-    # sender = {"name": "Saim Rao", "email": "saim@sjcurve.com"}
-    # to = [{"email": "hassan@sjcurve.com", "name": "Hassan"}]
-    # cc = [{"email": "example2@example2.com", "name": "Janice Doe"}]
-    # bcc = [{"name": "John Doe", "email": "example@example.com"}]
-    # reply_to = {"email": "saim@sjcurve.com", "name": "Saim Rao"}
-    # headers = {"Some-Custom-Name": "unique-id-1234"}
-    # params = {"parameter": "My param value", "subject": "New Subject"}
-    #
-    # # Send the emails using the configured client and the email parameters
-    # send_emails(subject, html_content, sender, to, reply_to, headers, instance)
-    #
-    # # Configure the NeverBounce client
-    # configure_neverbounce_client('private_5f36cd0ca4d6864da9164f363fdad07e')
+    # Configure the Brevo client
+    instance = configure_Brevo_client(
+        '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')
+
+    # Define the email parameters
+    subject = "test mail"
+    html_content = "<html><body><h1>This is test transactional email</h1><br><p>Task: </p><a href='https://app.clickup.com/t/866aa5v4h'>Clickup task</a></body></html>"
+    sender = {"name": "Saim Rao", "email": "saim@sjcurve.com"}
+    to = [{"email": "hassan@sjcurve.com", "name": "Hassan"}]
+    cc = [{"email": "example2@example2.com", "name": "Janice Doe"}]
+    bcc = [{"name": "John Doe", "email": "example@example.com"}]
+    reply_to = {"email": "saim@sjcurve.com", "name": "Saim Rao"}
+    headers = {"Some-Custom-Name": "unique-id-1234"}
+    params = {"parameter": "My param value", "subject": "New Subject"}
+
+    # Send the emails using the configured client and the email parameters
+    send_emails(subject, html_content, sender, to, reply_to, headers, instance)
+
+    # Configure the NeverBounce client
+    configure_neverbounce_client('private_5f36cd0ca4d6864da9164f363fdad07e')
 
     # Load data from the CSV file and convert it to a dictionary
     data_dict = load_data(r'C:\Users\saim rao\Downloads\pod_mental_emails-UK.csv')
