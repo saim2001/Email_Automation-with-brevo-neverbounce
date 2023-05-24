@@ -5,6 +5,12 @@ import os
 load_dotenv()
 
 
+'''
+API Documentations
+Brevo: https://developers.brevo.com/reference/getemaileventreport-1
+Neverbounce: https://developers.neverbounce.com/v4.0/reference/jobs-status
+'''
+
 def verify_emails(start, end):
     # Load data from a CSV file
     emails = load_data(r'C:\Users\saim rao\Downloads\pod_mental_emails-UK.csv')
