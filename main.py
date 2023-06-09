@@ -13,7 +13,7 @@ Neverbounce: https://developers.neverbounce.com/v4.0/reference/jobs-status
 
 def verify_emails(start, end):
     # Load data from a CSV file
-    emails = load_data(r'C:\Users\saim rao\Downloads\pod_mental_emails-UK.csv')
+    emails = load_data(r'C:\Users\saim rao\Downloads\Nursing Training Hospitals .csv')
 
     # Configure the NeverBounce client using the provided environment variable
     nb = cofigure_client(os.getenv('NEVERBOUNCE_KEY'), 'neverbounce')
@@ -146,16 +146,16 @@ if __name__ == "__main__":
     subject = "test mail"
     html_content = "<html><body><h1>This is test transactional email</h1><br><p>Task: </p><a href='https://app.clickup.com/t/866aa5v4h'>Clickup task</a></body></html>"
     sender = {"name": "Saim Rao", "email": "saim@sjcurve.com"}
-    to = [{"email": "saimrao49@gmail.com", "name": "saim"}, {"email": "saimrao2408@gmail.com", "name": "saim"}]
+    to = [{"email": "saim@sjcurve.com", "name": "saim"}, {"email": "hassan@sjcurve.com", "name": "Hassan"}]
     cc = [{"email": "example2@example2.com", "name": "Janice Doe"}]
     bcc = [{"name": "John Doe", "email": "example@example.com"}]
     reply_to = {"email": "saim@sjcurve.com", "name": "Saim Rao"}
     headers = {"Some-Custom-Name": "unique-id-1234"}
     params = {"parameter": "My param value", "subject": "New Subject"}
 
-    print(verify_emails(41, 44))
-    print(send_emails(to, headers, 2))
-    print(generate_report(300, '2023-05-24', '2023-05-24', template_id=2))
+    print(verify_emails(0,83))
+    # print(send_emails(to,headers,subject=subject,HTML_content=html_content,sender=sender,reply_to=reply_to,))
+    # print(generate_report(300, '2023-05-24', '2023-05-24', template_id=2))
 
 
 

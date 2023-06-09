@@ -3,3 +3,8 @@ __pycache__/
 *.pyc
 .env
 results.csv
+Contacts of Facility Licenses results.csv
+OET institutes results.csv
+Nursing Training Hospitals results.csv
+results_RN_IND_emails.csv
+UAE hospital results.csv

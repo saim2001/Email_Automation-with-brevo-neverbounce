@@ -36,6 +36,7 @@ def load_data(csv_path):
     data = pd.read_csv(csv_path, usecols=columns)
     # Convert the DataFrame to a dictionary
     data_dict = data.to_dict(orient='list')
+
     result_lst = []
 
     for i,j in zip(data_dict['name'],data_dict['email']):
