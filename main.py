@@ -13,7 +13,7 @@ Neverbounce: https://developers.neverbounce.com/v4.0/reference/jobs-status
 
 def verify_emails(start, end):
     # Load data from a CSV file
-    emails = load_data(r'C:\Users\saim rao\Downloads\Nursing Training Hospitals .csv')
+    emails = load_data(r'C:\Users\saim rao\Downloads\OT_UAE_emails (1).csv')
 
     # Configure the NeverBounce client using the provided environment variable
     nb = cofigure_client(os.getenv('NEVERBOUNCE_KEY'), 'neverbounce')
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     headers = {"Some-Custom-Name": "unique-id-1234"}
     params = {"parameter": "My param value", "subject": "New Subject"}
 
-    print(verify_emails(0,83))
+    print(verify_emails(0,502))
     # print(send_emails(to,headers,subject=subject,HTML_content=html_content,sender=sender,reply_to=reply_to,))
     # print(generate_report(300, '2023-05-24', '2023-05-24', template_id=2))
 
