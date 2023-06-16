@@ -2,6 +2,8 @@ from __future__ import print_function
 from utils import *
 from dotenv import load_dotenv
 import os
+import pandas as pd
+import pycountry
 load_dotenv()
 
 
@@ -10,10 +12,53 @@ API Documentations
 Brevo: https://developers.brevo.com/reference/getemaileventreport-1
 Neverbounce: https://developers.neverbounce.com/v4.0/reference/jobs-status
 '''
+def format_file(file):
+    deesired_columns = ['name', 'email', 'status', 'company_country', 'title', 'linkedin',
+               'city', 'location', 'company_name', 'company_linkedin',
+               'company_twitter', 'company_facebook', 'company_domain',
+               'number_of_employees', 'yearly_revenues', 'country', 'linkedin_headline',
+               'twitter', 'company_website', 'company_founded_year', 'state']
+    try:
+        df = pd.read_csv(file)
+        missing_cols = [col for col in deesired_columns if col not in df.columns]
+        if len(missing_cols)>0:
+            df = pd.concat([df,pd.DataFrame(columns=missing_cols)])
+            df.to_csv(file,index=False)
+        return 0
+    except Exception as e:
+        print(e)
+        return 1
 
-def verify_emails(start, end):
+def get_country_name(code):
+    try:
+        country = pycountry.countries.get(alpha_2=code)
+        return country.name
+    except AttributeError:
+        return code
+
+def merge_csv(file_1,file_2,outputname,*columns):
+
+    df_1 = pd.read_csv(file_1)
+    df_2 = pd.read_csv(file_2)
+
+    merged_df = pd.merge(df_1, df_2[list(columns)], on='email', how='left')
+    merged_df.to_csv(outputname, index=False)
+    return 0
+
+def insert_full_country_name(file,column_name):
+    try:
+        df = pd.read_csv(file)
+        df[column_name] = df[column_name].apply(get_country_name)
+        df.to_csv(file,index=False)
+        return 0
+    except Exception as e:
+        print(e)
+        return 1
+
+
+def verify_emails(file,start, end):
     # Load data from a CSV file
-    emails = load_data(r'C:\Users\saim rao\Downloads\OT_UAE_emails (1).csv')
+    emails = load_data(file)
 
     # Configure the NeverBounce client using the provided environment variable
     nb = cofigure_client(os.getenv('NEVERBOUNCE_KEY'), 'neverbounce')
@@ -44,15 +89,16 @@ def verify_emails(start, end):
         nb.jobs_download(job_id=job['job_id'], fd=f)
         f.close()
 
-        # Extract the valid emails from the job results
-        verified_emails = []
-        for job in jobs:
-            if job['verification']['result'] == 'valid':
-                verified_emails.append(job['data'])
+        df = pd.read_csv('results.csv')
+        df.columns = ['name','email','status']
+        df.to_csv('results.csv',index=False)
+
         print('\u2713 results fetched successfully')
-        return verified_emails
+        return 0
+
     except Exception as e:
         print('\u2717 error fetching results', '\n', e)
+        return 1
 
 
 
@@ -142,18 +188,14 @@ def generate_report(limit, startdate, enddate, offset=0, email=None, event=None,
 
 
 if __name__ == "__main__":
-    # Define the email parameters
-    subject = "test mail"
-    html_content = "<html><body><h1>This is test transactional email</h1><br><p>Task: </p><a href='https://app.clickup.com/t/866aa5v4h'>Clickup task</a></body></html>"
-    sender = {"name": "Saim Rao", "email": "saim@sjcurve.com"}
-    to = [{"email": "saim@sjcurve.com", "name": "saim"}, {"email": "hassan@sjcurve.com", "name": "Hassan"}]
-    cc = [{"email": "example2@example2.com", "name": "Janice Doe"}]
-    bcc = [{"name": "John Doe", "email": "example@example.com"}]
-    reply_to = {"email": "saim@sjcurve.com", "name": "Saim Rao"}
-    headers = {"Some-Custom-Name": "unique-id-1234"}
-    params = {"parameter": "My param value", "subject": "New Subject"}
 
-    print(verify_emails(0,502))
+    # print(verify_emails(r'C:\Users\saim rao\Downloads\OT_emails_verified (1).csv',0,227))
+    # merge_csv(r'C:\Users\saim rao\Downloads\pod_mental_emails-UK (2).csv',
+    #           'pod_mental_emails-UK (2)_vresults.csv','pod_mental_emails-UK (2)_vresults.csv'
+    #           ,'email','status')
+    format_file('pod_mental_emails-UK (2)_vresults.csv')
+    # insert_full_country_name('pod_mental_emails-UK (2)_vresults.csv.csv','company_country')
+    #
     # print(send_emails(to,headers,subject=subject,HTML_content=html_content,sender=sender,reply_to=reply_to,))
     # print(generate_report(300, '2023-05-24', '2023-05-24', template_id=2))
 

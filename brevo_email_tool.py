@@ -13,7 +13,7 @@ load_dotenv()
 
 # Access configuration
 configuration = sib_api_v3_sdk.Configuration()
-configuration.api_key['api-key'] = os.getenv("BREVO_KEY")
+configuration.api_key['api-key'] = os.getenv("api-key")
 
 # contacts API instance
 api_instance = sib_api_v3_sdk.ContactsApi(sib_api_v3_sdk.ApiClient(configuration))
@@ -60,6 +60,13 @@ def get_lists(folder_id):
     except:
         return
 
+def get_all_attr():
+    try:
+        api_response = api_instance.get_attributes()
+        pprint(api_response)
+    except ApiException as e:
+        print("Exception when calling AttributesApi->get_attributes: %s\n" % e)
+
 def create_attribute(category,name,type):
     """ function to create a new attribute for contacts """
 
@@ -76,10 +83,14 @@ def dump_data_into_brevo(list_id):
         info: this function will filtered data, & then push into brevo
         csv file format:
             |-----------|-----------|----------||----------|
-            |   name    |   email   |  status  ||  country  |
+            |   name    |   email   |  status  ||  country |
             |-----------|-----------|----------||----------|
     """
-    data = pd.read_csv(f"{file_name}.csv", usecols=['name','email','status','country'])
+    data = pd.read_csv(f"{file_name}.csv", usecols=['name','email','status','company_country','title','linkedin',
+                                                    'city','location','company_name','company_linkedin',
+                                                    'company_twitter','company_facebook','company_domain',
+                                                    'number_of_employees','yearly_revenues','country','linkedin_headline',
+                                                    'twitter','company_website','company_founded_year','state'])
     filtered_data = data[data['status'].isin(['catchall','valid'])].copy()
 
     split_name = filtered_data['name'].str.split()
@@ -87,9 +98,23 @@ def dump_data_into_brevo(list_id):
     filtered_data['lastname'] = split_name.str.get(-1)
 
 
-    filtered_data['attributes'] = filtered_data.apply(lambda series_obj: {'FIRSTNAME' : series_obj['firstname'], 'LASTNAME':series_obj['lastname'],'COUNTRY':series_obj['country']}, axis=1)
+    filtered_data['attributes'] = filtered_data.apply(
+        lambda series_obj: {'FIRSTNAME': series_obj['firstname'],
+                            'LASTNAME':series_obj['lastname'],
+                            'COUNTRY':series_obj['country'],'JOB_TITLE':series_obj['title'],
+                            'LINKEDIN_PROFILE':series_obj['linkedin'],'CITY':series_obj['city'],
+                            'STATE':series_obj['state'],'COMPANY':series_obj['company_name'],
+                            'COMPANY_LINKEDIN':series_obj['company_linkedin'],
+                            'COMPANY_TWITTER':series_obj['company_twitter'],'COMPANY_FACEBOOK':series_obj['company_facebook'],
+                            'DOMAIN':series_obj['company_domain'],'NUMBER_OF_EMPLOYEES':series_obj['number_of_employees'],
+                            'YEARLY_REVENUES':series_obj['yearly_revenues'],'WEBSITE':series_obj['company_website'],
+                            'LINKEDIN_HEADLINE':series_obj['linkedin_headline'],'TWITTER':series_obj['twitter'],
+                            'COMPANY_FOUND':series_obj['company_founded_year']}, axis=1)
 
-    filtered_data.drop(['name','status','lastname','firstname','country'],axis=1,inplace=True)
+    filtered_data.drop(['name','status','lastname','firstname','company_country','title','linkedin','city',
+                        'location','company_name','company_linkedin','company_twitter','company_facebook',
+                        'company_domain','number_of_employees','yearly_revenues','country','linkedin_headline',
+                                                    'twitter','company_website','company_founded_year','state'],axis=1,inplace=True)
 
     parsed_data = json.loads(filtered_data.to_json(orient="records"))
 
@@ -105,6 +130,7 @@ def dump_data_into_brevo(list_id):
         print("❌ Error while loading data into list",e)
 
 
+
 # main driver code
 if __name__ == "__main__":
     """
@@ -116,7 +142,7 @@ if __name__ == "__main__":
     # Folder select
     ids,names = get_folders()
     folder_names = "\n".join(list(map(lambda x: f"{x[0]+1}- {x[1]}", enumerate(names))))
-    
+
     print(folder_names)
     folder_idx = int(input("Please specify folder name from the above ones: "))
     folder_id = ids[folder_idx-1]
@@ -128,9 +154,7 @@ if __name__ == "__main__":
     print(list_names)
 
     list_id = int(input("Please specify list name from the above ones: "))
-
     file_name = str(input("Please enter file name: "))
-
     # dump data
     if list_id:
         dump_data_into_brevo(list_id)
