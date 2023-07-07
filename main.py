@@ -12,6 +12,50 @@ API Documentations
 Brevo: https://developers.brevo.com/reference/getemaileventreport-1
 Neverbounce: https://developers.neverbounce.com/v4.0/reference/jobs-status
 '''
+
+def email_cleaner(file):
+
+    email_patterns = [
+    "{first}.{last}@{domain}",
+    "{first}{last}@{domain}",
+    "{first}@{domain}"
+    ]
+
+    refined_database = []
+    try:
+        data = pd.read_csv(f"{file}")
+        filtered_df = data[~(data['domain'].isnull())]
+        filtered_df_orgnl = data[~(data['email'].isnull())]
+        
+        # filtered_df = data[~(data['domain'].isnull())][900:]
+
+        for idx, row in filtered_df.iterrows():
+            if type(row['email'])==float:
+                print(f"<-> Initiated for row {idx}")
+                data_dict = row.to_dict()
+                for i in range(3):
+                    data_dict_copy = data_dict.copy()
+                    data_dict_copy['email'] = email_patterns[i].format(first=str(row['first_name']).lower().replace("-",""), last=str(row['last_name']).lower().replace("-",""), domain=row['domain'])
+                    refined_database.append(data_dict_copy)
+
+        # print(refined_database)
+        final_df = pd.DataFrame(refined_database)
+        print(final_df)
+        new_dataset = pd.concat([filtered_df_orgnl,final_df],axis=0)
+        new_dataset.to_csv(f"{file}", index=False)
+        print('✔ Emails cleaned!')
+        return 0
+    except Exception as e:
+        print("❌ Could'nt clean emails",e)
+        return 1
+
+def is_country_code(value):
+    try:
+        pycountry.countries.get(alpha_2=value)
+        return True
+    except LookupError:
+        return False
+
 def format_file(file):
     deesired_columns = ['name', 'email', 'status', 'company_country', 'title', 'linkedin',
                'city', 'location', 'company_name', 'company_linkedin',
@@ -31,7 +75,10 @@ def format_file(file):
 
 def get_country_name(code):
     try:
-        country = pycountry.countries.get(alpha_2=code)
+        if code.isupper():
+            country = pycountry.countries.get(alpha_2=code)
+        else:
+            country = pycountry.countries.get(alpha_2=dtr(code).upper())
         return country.name
     except AttributeError:
         return code
@@ -42,12 +89,13 @@ def merge_csv(file_1,file_2,outputname,*columns):
     df_2 = pd.read_csv(file_2)
 
     merged_df = pd.merge(df_1, df_2[list(columns)], on='email', how='left')
-    merged_df.to_csv(outputname, index=False)
+    merged_df.to_csv(f'To_insert/{outputname}', index=False)
     return 0
 
 def insert_full_country_name(file,column_name):
     try:
-        df = pd.read_csv(file)
+        dt_map = {'Country':str}
+        df = pd.read_csv(file,dtype=dt_map,low_memory=False)
         df[column_name] = df[column_name].apply(get_country_name)
         df.to_csv(file,index=False)
         return 0
@@ -56,7 +104,7 @@ def insert_full_country_name(file,column_name):
         return 1
 
 
-def verify_emails(file,start, end):
+def verify_emails(file):
     # Load data from a CSV file
     emails = load_data(file)
 
@@ -65,7 +113,7 @@ def verify_emails(file,start, end):
 
     try:
         # Create a job to verify the emails
-        job = nb.jobs_create(emails[start:end])
+        job = nb.jobs_create(emails)
         resp = nb.jobs_parse(job['job_id'], auto_start=False)
         print('\u2713 job created successfully\n', job, '\n', resp)
     except Exception as e:
@@ -103,65 +151,6 @@ def verify_emails(file,start, end):
 
 
 
-'''
-
-Subject: subject of the email (regular string)
-
-HTML_content: HTML body of the message (string)
-
-Sender: Object or dictionary of sender from whom email will be sent 
-
-eg({"name":"Mary from MyShop", "email":"no-reply@myshop.com"})
-
-to: List of email addresses and names (optional) of the recipients. For example,
-[{"name":"Jimmy", "email":"jimmy98@example.com"}, {"name":"Joe", "email":"joe@example.com"}] (list of objects or dictionaries)
-
-reply_to:Email (required), along with name (optional), on which transactional mail recipients will be able to reply back. For example,
-{"email":"ann6533@example.com", "name":"Ann"} (object or dictionary)
-
-headers: Pass the set of custom headers (not the standard headers) that shall be sent along the mail headers in the original email. 'sender.ip' header can be set (only for dedicated ip users) to mention the IP to be used for sending transactional emails. Headers are allowed in This-Case-Only (i.e. words separated by hyphen with first letter of each word in capital letter), they will be converted to such case styling if not in this format in the request payload. For example,
-{"sender.ip":"1.2.3.4", "X-Mailin-custom":"some_custom_header", "idempotencyKey":"abc-123"} (object or dictionary)
-
-params (optional): Pass the set of attributes to customize the template. For example, {"FNAME":"Joe", "LNAME":"Doe"} (object or dictionary)
-
-api_instance: instance created from configuration client function for transactional email client 
-
-cc (optional): List of email addresses and names (optional) of the recipients in cc (list of objects or dictionaries)
-
-bcc (optional): List of email addresses and names (optional) of the recipients in bcc (list of objects or dictionaries)
-
-
-'''
-
-
-def send_emails(to, headers, template_id=None, subject=None, HTML_content=None, sender=None, reply_to=None, cc=None, bcc=None, params=None):
-    # Configure the Brevo client using the provided environment variable
-    configuration = cofigure_client(os.getenv('BREVO_KEY'), 'brevo')
-    email_api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
-
-    # Create an instance of SendSmtpEmail with the provided parameters
-    if template_id == None:
-        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, bcc=bcc, cc=cc, reply_to=reply_to, headers=headers, html_content=HTML_content, sender=sender, subject=subject, params=params)
-        try:
-            # Send the transactional email using the configured client and the SendSmtpEmail instance
-            api_response = email_api_instance.send_transac_email(send_smtp_email)
-            pprint(api_response)
-            return ('\u2713 emails sent successfully')
-        except ApiException as e:
-            print("Exception when calling SMTPApi->send_transac_email: %s\n" % e)
-            return '\u2717 error in sending Emails', e
-    else:
-        send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, bcc=bcc, cc=cc, headers=headers, template_id=template_id)
-        try:
-            # Send the transactional email using the configured client and the SendSmtpEmail instance
-            api_response = email_api_instance.send_transac_email(send_smtp_email)
-            pprint(api_response)
-            return ('\u2713 emails sent successfully')
-        except ApiException as e:
-            print("Exception when calling SMTPApi->send_transac_email: %s\n" % e)
-            return '\u2717 error in sending Emails', e
-
-
 def generate_report(limit, startdate, enddate, offset=0, email=None, event=None, tags=None, template_id=None):
     # Configure the Brevo client using the provided environment variable
     configuration = cofigure_client(os.getenv('BREVO_KEY'), 'brevo')
@@ -189,15 +178,33 @@ def generate_report(limit, startdate, enddate, offset=0, email=None, event=None,
 
 if __name__ == "__main__":
 
-    # print(verify_emails(r'C:\Users\saim rao\Downloads\OT_emails_verified (1).csv',0,227))
-    # merge_csv(r'C:\Users\saim rao\Downloads\pod_mental_emails-UK (2).csv',
-    #           'pod_mental_emails-UK (2)_vresults.csv','pod_mental_emails-UK (2)_vresults.csv'
-    #           ,'email','status')
-    format_file('pod_mental_emails-UK (2)_vresults.csv')
-    # insert_full_country_name('pod_mental_emails-UK (2)_vresults.csv.csv','company_country')
-    #
-    # print(send_emails(to,headers,subject=subject,HTML_content=html_content,sender=sender,reply_to=reply_to,))
-    # print(generate_report(300, '2023-05-24', '2023-05-24', template_id=2))
+
+    email_cleaner(r'To_insert\input_emails.csv')
+    print(verify_emails(r'To_insert\input_emails.csv'))
+    merge_csv(r'To_insert\input_emails.csv',
+              'results.csv','verified_output_emails.csv'
+              ,'email','status')
+    format_file(r'To_insert/verified_output_emails.csv')
+    contains_country_code = False
+    contains_full_country_name = False
+    df = pd.read_csv(r'To_insert/verified_output_emails.csv')
+    country_column = df.iloc[:, df.columns.str.lower().isin(['country'])]
+    print(country_column)
+    for value in country_column:
+        print(value)
+        print(is_country_code(value))
+        if is_country_code(value):
+            contains_country_code = True
+        else:
+            contains_full_country_name = True
+    print(contains_country_code)
+    if contains_country_code:
+        insert_full_country_name(r'To_insert/verified_output_emails.csv',country_column)
+        print('done')
+    
+    
+   
+
 
 
 
